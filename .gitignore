@@ -1,0 +1,13 @@
+node_modules/
+.env
+.scaffold/
+.superpowers/
+# 测试代码仅保留在本地，不随公开仓库同步
+test/
+# 内部计划、设计文档与工作手册仅保留在本地
+plan/
+CLAUDE.md
+typings/i10n.d.ts
+typings/prefs.d.ts
+.DS_Store
+*.log

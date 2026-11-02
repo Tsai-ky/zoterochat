@@ -1,0 +1,49 @@
+{
+  "name": "zoterochat",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI reading assistant for Zotero PDFs · Zotero PDF 阅读助手",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tsai-ky/zoterochat.git"
+  },
+  "config": {
+    "addonName": "ZoteroChat",
+    "addonID": "zoterochat@tsai-ky.github.io",
+    "addonRef": "zoterochat",
+    "addonInstance": "ZoteroChat",
+    "prefsPrefix": "extensions.zoterochat"
+  },
+  "scripts": {
+    "start": "node scripts/scaffold.mjs serve",
+    "build": "node scripts/scaffold.mjs build && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:zotero": "node scripts/scaffold.mjs test",
+    "lint": "prettier --check . && eslint .",
+    "lint:fix": "prettier --write . && eslint . --fix"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.17",
+    "katex": "^0.16.47",
+    "marked": "^18.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@zotero-plugin/eslint-config": "^0.6.10",
+    "eslint": "^10.13.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "zotero-plugin-scaffold": "^0.9.3",
+    "zotero-types": "^4.1.3"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "tabWidth": 2,
+    "endOfLine": "lf"
+  }
+}

@@ -1,0 +1,3 @@
+startup-begin = ZoteroChat 正在启动…
+startup-finish = ZoteroChat 已就绪
+prefs-title = ZoteroChat

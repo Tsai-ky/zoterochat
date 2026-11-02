@@ -1,0 +1,11 @@
+.scaffold
+.superpowers
+node_modules
+addon/content/katex/
+CLAUDE.md
+plan/
+typings/i10n.d.ts
+typings/prefs.d.ts
+package-lock.json
+LICENSE
+THIRD-PARTY-NOTICES.md

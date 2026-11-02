@@ -1,0 +1,3 @@
+startup-begin = Starting ZoteroChat…
+startup-finish = ZoteroChat is ready
+prefs-title = ZoteroChat

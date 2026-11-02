@@ -1,0 +1,247 @@
+<vbox
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  id="zoterochat-preferences"
+  onload="Zotero.ZoteroChat?.hooks.onPrefsEvent('load', { window })"
+>
+  <linkset>
+    <html:link rel="localization" href="zoterochat-preferences.ftl" />
+  </linkset>
+
+  <vbox class="main-section">
+    <groupbox id="zoterochat-provider-group">
+      <label>
+        <html:h2 data-l10n-id="pref-provider-heading" />
+      </label>
+
+      <!-- Protocol 与 Model 共用同一个自绘下拉；原生 menulist 的菜单项文案在
+           插件沙箱里不可靠，会导致首次打开时显示为空白。 -->
+      <hbox class="zoterochat-field" align="center">
+        <label
+          data-l10n-id="pref-provider-active"
+          control="zoterochat-provider-active"
+        />
+        <html:div
+          id="zoterochat-provider-active"
+          class="zoterochat-select-host"
+        />
+      </hbox>
+
+      <vbox id="zoterochat-fields-openai" class="zoterochat-provider-fields">
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-base-url"
+            control="zoterochat-openai-baseURL"
+          />
+          <html:input
+            id="zoterochat-openai-baseURL"
+            class="zoterochat-control"
+            type="text"
+            preference="provider.openai.baseURL"
+          />
+        </hbox>
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-api-key"
+            control="zoterochat-openai-apiKey"
+          />
+          <html:input
+            id="zoterochat-openai-apiKey"
+            class="zoterochat-control"
+            type="password"
+            preference="provider.openai.apiKey"
+          />
+        </hbox>
+        <hbox class="zoterochat-field" align="center">
+          <label data-l10n-id="pref-model" control="zoterochat-openai-model" />
+          <html:div
+            id="zoterochat-openai-model"
+            class="zoterochat-select-host"
+          />
+        </hbox>
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-max-tokens"
+            control="zoterochat-openai-maxTokens"
+          />
+          <html:input
+            id="zoterochat-openai-maxTokens"
+            class="zoterochat-control"
+            type="number"
+            min="1"
+            max="128000"
+          />
+        </hbox>
+        <vbox class="zoterochat-field zoterochat-field-column">
+          <label
+            data-l10n-id="pref-extra-headers"
+            control="zoterochat-openai-extraHeaders"
+          />
+          <html:textarea
+            id="zoterochat-openai-extraHeaders"
+            class="zoterochat-control"
+            rows="3"
+            spellcheck="false"
+          />
+        </vbox>
+      </vbox>
+
+      <vbox
+        id="zoterochat-fields-anthropic"
+        class="zoterochat-provider-fields"
+        hidden="true"
+      >
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-base-url"
+            control="zoterochat-anthropic-baseURL"
+          />
+          <html:input
+            id="zoterochat-anthropic-baseURL"
+            class="zoterochat-control"
+            type="text"
+            preference="provider.anthropic.baseURL"
+          />
+        </hbox>
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-api-key"
+            control="zoterochat-anthropic-apiKey"
+          />
+          <html:input
+            id="zoterochat-anthropic-apiKey"
+            class="zoterochat-control"
+            type="password"
+            preference="provider.anthropic.apiKey"
+          />
+        </hbox>
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-model"
+            control="zoterochat-anthropic-model"
+          />
+          <html:div
+            id="zoterochat-anthropic-model"
+            class="zoterochat-select-host"
+          />
+        </hbox>
+        <hbox class="zoterochat-field" align="center">
+          <label
+            data-l10n-id="pref-max-tokens"
+            control="zoterochat-anthropic-maxTokens"
+          />
+          <html:input
+            id="zoterochat-anthropic-maxTokens"
+            class="zoterochat-control"
+            type="number"
+            min="1"
+            max="128000"
+          />
+        </hbox>
+        <vbox class="zoterochat-field zoterochat-field-column">
+          <label
+            data-l10n-id="pref-extra-headers"
+            control="zoterochat-anthropic-extraHeaders"
+          />
+          <html:textarea
+            id="zoterochat-anthropic-extraHeaders"
+            class="zoterochat-control"
+            rows="3"
+            spellcheck="false"
+          />
+        </vbox>
+      </vbox>
+
+      <hbox align="center" class="zoterochat-test-row">
+        <button id="zoterochat-test-button" data-l10n-id="pref-test" />
+        <html:span
+          id="zoterochat-test-status"
+          class="zoterochat-status"
+          aria-live="polite"
+        />
+      </hbox>
+    </groupbox>
+
+    <groupbox id="zoterochat-context-group">
+      <label>
+        <html:h2 data-l10n-id="pref-context-heading" />
+      </label>
+
+      <!-- 全文与选中文本始终携带（面板上可用气泡按次排除）；
+           字符预算由面板里当前模型的上下文窗口档位决定，这里只保留条数上限。 -->
+      <hbox class="zoterochat-field" align="center">
+        <label
+          data-l10n-id="pref-max-history-messages"
+          control="zoterochat-context-maxHistoryMessages"
+        />
+        <html:input
+          id="zoterochat-context-maxHistoryMessages"
+          class="zoterochat-control"
+          type="number"
+          min="1"
+        />
+      </hbox>
+    </groupbox>
+
+    <groupbox id="zoterochat-prompt-group">
+      <label>
+        <html:h2 data-l10n-id="pref-system-prompt" />
+      </label>
+      <html:textarea
+        id="zoterochat-system-prompt"
+        class="zoterochat-control"
+        rows="5"
+        preference="prompt.system"
+      />
+    </groupbox>
+
+    <groupbox id="zoterochat-presets-group">
+      <label>
+        <html:h2 data-l10n-id="pref-presets-heading" />
+      </label>
+      <html:p class="zoterochat-note" data-l10n-id="pref-presets-hint" />
+      <html:div id="zoterochat-preset-list" class="zoterochat-preset-editor" />
+      <vbox class="zoterochat-field zoterochat-field-column">
+        <label
+          data-l10n-id="pref-preset-name"
+          control="zoterochat-preset-name"
+        />
+        <html:input
+          id="zoterochat-preset-name"
+          class="zoterochat-control"
+          type="text"
+        />
+      </vbox>
+      <vbox class="zoterochat-field zoterochat-field-column">
+        <label
+          data-l10n-id="pref-preset-prompt"
+          control="zoterochat-preset-prompt"
+        />
+        <html:textarea
+          id="zoterochat-preset-prompt"
+          class="zoterochat-control"
+          rows="3"
+        />
+      </vbox>
+      <hbox align="center" class="zoterochat-test-row">
+        <button id="zoterochat-preset-add" data-l10n-id="pref-preset-add" />
+        <button
+          id="zoterochat-preset-cancel"
+          data-l10n-id="pref-preset-cancel"
+          hidden="true"
+        />
+        <html:span
+          id="zoterochat-preset-status"
+          class="zoterochat-status"
+          aria-live="polite"
+        />
+      </hbox>
+    </groupbox>
+
+    <html:p
+      id="zoterochat-key-notice"
+      class="zoterochat-note"
+      data-l10n-id="pref-key-notice"
+    />
+  </vbox>
+</vbox>
