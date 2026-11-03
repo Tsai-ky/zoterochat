@@ -78,8 +78,20 @@ export function chooseConversationPath({
   return { path: fallbackPath, existing: false, source: "fallback" };
 }
 
+/** Windows 盘符路径（C:\ 或 C:/）与 UNC 路径（\\server\share）。 */
+const WINDOWS_PATH_PATTERN = /^(?:[A-Za-z]:[\\/]|\\\\)/;
+
+/**
+ * Windows 的 nsIFile.initWithPath 不接受混合分隔符
+ * （如 C:\...\storage\KEY/name.json），因此 Windows 路径统一用反斜杠。
+ * 纯逻辑不引用 Zotero，平台差异靠路径形态判断。
+ */
 function joinPath(directory: string, name: string): string {
-  return `${directory.replace(/[\\/]+$/, "")}/${name}`;
+  const base = directory.replace(/[\\/]+$/, "");
+  if (WINDOWS_PATH_PATTERN.test(base)) {
+    return `${base.replace(/\//g, "\\")}\\${name}`;
+  }
+  return `${base}/${name}`;
 }
 
 // ---------------------------------------------------------------- Zotero 适配
@@ -162,7 +174,7 @@ function orderedAttachmentIDs(paper: PaperRef): number[] {
 
 function getFallbackDirectory(): string {
   const base = String(Zotero.DataDirectory.dir ?? "").replace(/[\\/]+$/, "");
-  return `${base}/${FALLBACK_DIRECTORY_NAME}`;
+  return joinPath(base, FALLBACK_DIRECTORY_NAME);
 }
 
 function pathExists(path: string): boolean {

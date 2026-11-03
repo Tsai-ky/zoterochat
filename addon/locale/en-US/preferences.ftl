@@ -1,4 +1,3 @@
-prefs-title = ZoteroChat Settings
 pref-provider-heading = Model provider
 pref-provider-active = Protocol
 pref-openai = OpenAI compatible

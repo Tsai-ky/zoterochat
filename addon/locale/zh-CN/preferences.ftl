@@ -1,4 +1,3 @@
-prefs-title = ZoteroChat 设置
 pref-provider-heading = 模型服务
 pref-provider-active = 协议
 pref-openai = OpenAI 兼容
