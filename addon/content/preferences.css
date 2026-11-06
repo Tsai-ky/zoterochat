@@ -50,7 +50,8 @@
 }
 
 #zoterochat-preferences hbox.zoterochat-field > html|input,
-#zoterochat-preferences hbox.zoterochat-field > .zoterochat-select-host {
+#zoterochat-preferences hbox.zoterochat-field > .zoterochat-select-host,
+#zoterochat-preferences hbox.zoterochat-field > .zoterochat-font-control {
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -133,6 +134,90 @@
 #zoterochat-preferences #zoterochat-preset-cancel:focus-visible {
   outline: 2px solid var(--accent-blue, #4072e5);
   outline-offset: -2px;
+}
+
+/* ------------------------------------------------------------ 外观：消息字号 */
+
+#zoterochat-preferences .zoterochat-font-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+#zoterochat-preferences .zoterochat-font-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--accent-blue, #4072e5);
+}
+
+#zoterochat-preferences .zoterochat-font-value {
+  flex: 0 0 auto;
+  min-width: 3.2em;
+  color: var(--fill-secondary, GrayText);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+#zoterochat-preferences .zoterochat-font-reset {
+  appearance: none;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-height: 26px;
+  margin: 0;
+  padding: 3px 12px;
+  border: 1px solid var(--zoterochat-border);
+  border-radius: 4px;
+  background: var(--material-background, Canvas);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+#zoterochat-preferences .zoterochat-font-reset:hover {
+  background: var(--zoterochat-surface);
+}
+
+#zoterochat-preferences .zoterochat-font-reset:focus-visible {
+  outline: 2px solid var(--accent-blue, #4072e5);
+  outline-offset: -2px;
+}
+
+#zoterochat-preferences .zoterochat-font-preview {
+  gap: 6px;
+  margin-top: 10px;
+}
+
+#zoterochat-preferences .zoterochat-font-preview-label {
+  color: var(--fill-secondary, GrayText);
+  font-size: 0.9em;
+}
+
+/* 与面板消息区同构：用户气泡靠右，助手正文占满；字号由 JS 写到容器上。 */
+#zoterochat-preferences .zoterochat-font-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--zoterochat-border);
+  border-radius: 6px;
+  background: var(--zoterochat-surface);
+  line-height: 1.5;
+}
+
+#zoterochat-preferences .zoterochat-font-preview-user {
+  align-self: flex-end;
+  max-width: 88%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--fill-quinary, rgba(127, 127, 127, 0.18));
+  overflow-wrap: anywhere;
+}
+
+#zoterochat-preferences .zoterochat-font-preview-assistant {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* ------------------------------------------------------------ 预设提示词编辑器 */

@@ -1,3 +1,6 @@
+/* 聊天气泡正文字号（像素）；其余次要文字不随此项缩放。 */
+pref("appearance.messageFontSize", 13);
+
 pref("provider.active", "openai");
 
 pref("provider.openai.baseURL", "https://api.openai.com/v1");

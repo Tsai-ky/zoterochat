@@ -1,5 +1,10 @@
 import { clearFullTextCache } from "./modules/context";
 import {
+  applyMessageFontSize,
+  registerMessageFont,
+  unregisterMessageFont,
+} from "./modules/messageFont";
+import {
   registerPreferencesPane,
   registerPrefsScripts,
 } from "./modules/preferenceScript";
@@ -26,6 +31,7 @@ async function onStartup(): Promise<void> {
   await registerPreferencesPane();
   selectionTracker.start(addon.data.config.addonID);
   registerReaderChat();
+  registerMessageFont();
 
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
@@ -37,6 +43,7 @@ async function onStartup(): Promise<void> {
 
 async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
   ensureStyleSheet(win);
+  applyMessageFontSize(win);
   try {
     win.MozXULElement.insertFTLIfNeeded(
       `${addon.data.config.addonRef}-mainWindow.ftl`,
@@ -78,6 +85,7 @@ function onShutdown(): void {
 
   safely("stop selection tracker", () => selectionTracker.stop());
   safely("clear full text cache", () => clearFullTextCache());
+  safely("unregister message font", () => unregisterMessageFont());
 
   for (const win of Zotero.getMainWindows()) {
     safely("remove stylesheet", () => removeStyleSheet(win));

@@ -1,3 +1,10 @@
+pref-appearance-heading = 外观
+pref-message-font-size = 消息字号
+pref-font-size-value = { $px } px
+pref-font-reset = 恢复默认
+pref-font-preview = 预览
+pref-font-preview-user = 这篇论文的主要贡献是什么？
+pref-font-preview-assistant = 论文提出了一个统一框架，在三个公开数据集上取得了更好的结果，同时把推理成本降低了约 40%。The same sentence renders in English too.
 pref-provider-heading = 模型服务
 pref-provider-active = 协议
 pref-openai = OpenAI 兼容

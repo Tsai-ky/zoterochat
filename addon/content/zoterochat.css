@@ -372,6 +372,9 @@
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
+  /* 字号由设置页「外观 → 消息字号」写入主窗口变量；标题、代码等
+     em 相对字号会随正文一起缩放，其余次要文字保持固定字号。 */
+  font-size: var(--zoterochat-message-font-size, 13px);
 }
 
 .zoterochat-panel .zoterochat-message-note {

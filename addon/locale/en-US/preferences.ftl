@@ -1,3 +1,10 @@
+pref-appearance-heading = Appearance
+pref-message-font-size = Message font size
+pref-font-size-value = { $px } px
+pref-font-reset = Reset
+pref-font-preview = Preview
+pref-font-preview-user = What is the main contribution of this paper?
+pref-font-preview-assistant = The paper introduces a unified framework that improves results on three public datasets while cutting inference cost by about 40%. 中文字形同样会随字号一起放大。
 pref-provider-heading = Model provider
 pref-provider-active = Protocol
 pref-openai = OpenAI compatible

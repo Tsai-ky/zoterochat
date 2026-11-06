@@ -9,6 +9,60 @@
   </linkset>
 
   <vbox class="main-section">
+    <groupbox id="zoterochat-appearance-group">
+      <label>
+        <html:h2 data-l10n-id="pref-appearance-heading" />
+      </label>
+
+      <hbox class="zoterochat-field" align="center">
+        <label
+          data-l10n-id="pref-message-font-size"
+          control="zoterochat-message-font-size"
+        />
+        <html:div class="zoterochat-font-control">
+          <html:input
+            id="zoterochat-message-font-size"
+            class="zoterochat-font-slider"
+            type="range"
+            min="11"
+            max="20"
+            step="1"
+          />
+          <html:span
+            id="zoterochat-message-font-size-value"
+            class="zoterochat-font-value"
+          />
+          <html:button
+            id="zoterochat-message-font-reset"
+            class="zoterochat-font-reset"
+            type="button"
+            data-l10n-id="pref-font-reset"
+          />
+        </html:div>
+      </hbox>
+
+      <!-- 面板里只有消息正文随字号缩放，预览也只展示这两类气泡。 -->
+      <vbox class="zoterochat-font-preview">
+        <html:div
+          class="zoterochat-font-preview-label"
+          data-l10n-id="pref-font-preview"
+        />
+        <html:div
+          id="zoterochat-message-font-preview"
+          class="zoterochat-font-preview-body"
+        >
+          <html:div
+            class="zoterochat-font-preview-user"
+            data-l10n-id="pref-font-preview-user"
+          />
+          <html:div
+            class="zoterochat-font-preview-assistant"
+            data-l10n-id="pref-font-preview-assistant"
+          />
+        </html:div>
+      </vbox>
+    </groupbox>
+
     <groupbox id="zoterochat-provider-group">
       <label>
         <html:h2 data-l10n-id="pref-provider-heading" />

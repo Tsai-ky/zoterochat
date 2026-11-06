@@ -6,6 +6,13 @@ import { getPref, setPref } from "../utils/prefs";
 import { AppError, redactSecrets, redactUrl } from "../utils/errors";
 import { createProvider } from "./llm";
 import type { ProviderKind } from "./llm/types";
+import {
+  DEFAULT_MESSAGE_FONT_SIZE,
+  MAX_MESSAGE_FONT_SIZE,
+  MIN_MESSAGE_FONT_SIZE,
+  getMessageFontSize,
+  normalizeMessageFontSize,
+} from "./messageFont";
 import { OptionSelect, type OptionSelectLabels } from "./optionSelect";
 import { movePreset } from "./promptPresets";
 import {
@@ -97,6 +104,7 @@ export function registerPrefsScripts(win: Window): void {
     1,
   );
 
+  setupMessageFont(doc);
   updateProviderVisibility(doc, settings.activeProvider);
   setupProviderSelect(doc, win);
   setupModelSelects(doc, win);
@@ -168,6 +176,50 @@ function bindContextNumber(
     } else {
       input.classList.add("zoterochat-invalid");
     }
+  });
+}
+
+/**
+ * 消息字号：拖动滑块即时写 pref 并刷新预览，同时通过 pref 监听让已打开的
+ * 阅读器面板立即重排；重置按钮把字号恢复到内置默认值。
+ */
+function setupMessageFont(doc: Document): void {
+  const slider = byId<HTMLInputElement>(doc, "zoterochat-message-font-size");
+  if (!slider) {
+    return;
+  }
+  const valueLabel = doc.getElementById("zoterochat-message-font-size-value");
+  const preview = doc.getElementById("zoterochat-message-font-preview");
+  const reset = byId<ButtonElement>(doc, "zoterochat-message-font-reset");
+
+  slider.min = String(MIN_MESSAGE_FONT_SIZE);
+  slider.max = String(MAX_MESSAGE_FONT_SIZE);
+
+  const render = (size: number, writePref: boolean): void => {
+    slider.value = String(size);
+    if (valueLabel) {
+      valueLabel.textContent = getString("pref-font-size-value", {
+        args: { px: size },
+      });
+    }
+    if (preview) {
+      // 预览与面板正文共用同一档排版：字号 + 1.5 行高。
+      preview.style.fontSize = `${size}px`;
+    }
+    if (writePref) {
+      setPref("appearance.messageFontSize", size);
+    }
+  };
+
+  const current = getMessageFontSize();
+  // pref 被手动改成越界值或非数字时，把规范化结果写回，滑块与面板保持一致。
+  render(current, current !== getPref("appearance.messageFontSize"));
+
+  slider.addEventListener("input", () => {
+    render(normalizeMessageFontSize(slider.value), true);
+  });
+  reset?.addEventListener("click", () => {
+    render(DEFAULT_MESSAGE_FONT_SIZE, true);
   });
 }
 
