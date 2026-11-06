@@ -7,7 +7,7 @@
 <p align="center">在 Zotero 的 PDF 阅读器里，直接和论文对话。</p>
 
 <p align="center">
-  <img alt="Zotero 10.0.6+" src="https://img.shields.io/badge/Zotero-10.0.6%2B-CC2936?style=flat-square" />
+  <img alt="Zotero 8.0+" src="https://img.shields.io/badge/Zotero-8.0%2B-CC2936?style=flat-square" />
   <img alt="License: AGPL-3.0-or-later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-3DA639?style=flat-square" />
   <img alt="Status: active" src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" />
 </p>
