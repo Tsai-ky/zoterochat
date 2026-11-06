@@ -1,4 +1,6 @@
 reader-chat-open = 就这篇论文提问
+reader-popup-add-to-chat = 添加到对话
+reader-popup-added = 已添加
 reader-chat-empty = 打开一篇 PDF 文献后即可开始对话。
 conversation-new = 新对话
 conversation-list = 对话列表

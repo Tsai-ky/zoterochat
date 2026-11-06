@@ -1,4 +1,6 @@
 reader-chat-open = Ask about this paper
+reader-popup-add-to-chat = Add to chat
+reader-popup-added = Added
 reader-chat-empty = Open a PDF to start chatting.
 conversation-new = New chat
 conversation-list = Conversations

@@ -14,6 +14,7 @@ import {
   detachReaderChatPane,
   registerReaderChat,
 } from "./modules/readerChatPane";
+import { selectionPopup } from "./modules/selectionPopup";
 import { selectionTracker } from "./modules/selectionTracker";
 import { flushChatStorage } from "./storage/fileChatStorage";
 import { ensureStyleSheet, removeStyleSheet } from "./utils/dom";
@@ -29,7 +30,7 @@ async function onStartup(): Promise<void> {
 
   initLocale();
   await registerPreferencesPane();
-  selectionTracker.start(addon.data.config.addonID);
+  selectionPopup.start(addon.data.config.addonID);
   registerReaderChat();
   registerMessageFont();
 
@@ -83,7 +84,8 @@ function onShutdown(): void {
     void flushChatStorage().catch((e: unknown) => logError(e));
   });
 
-  safely("stop selection tracker", () => selectionTracker.stop());
+  safely("stop selection popup", () => selectionPopup.stop());
+  safely("clear selection tracker", () => selectionTracker.clear());
   safely("clear full text cache", () => clearFullTextCache());
   safely("unregister message font", () => unregisterMessageFont());
 

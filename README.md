@@ -12,13 +12,17 @@
   <img alt="Status: active" src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" />
 </p>
 
-![ZoteroChat 聊天面板](docs/screenshots/reader-panel.png)
+![ZoteroChat 聊天面板](docs/screenshots/reader-panel.gif)
 
 ## ✨ 功能
 
 - 📄 **引用全文**：对话支持选择是否携带当前 PDF 全文。
-- 🖍 **引用标注**：在 PDF 中选中文本后自动带入当前问题。
+- 🖍 **按需引用选中文本**：在 PDF 中选中文本后，点浮窗里的「Add to chat / 添加到对话」才加入当前问题。
 - 💬 **预定义提示词**：设置页支持预定义提示词，如总结全文等。
+
+## 🎬 选中文本加入对话
+
+![选中文字后点击 Add to chat 加入上下文](docs/screenshots/add-to-chat.gif)
 
 ## 📦 安装
 
@@ -32,8 +36,6 @@
 1. 在 Zotero 中打开一篇带 PDF 的文献。
 2. 点阅读器工具栏的聊天按钮，或右键菜单 →「就这篇论文提问」。
 3. 在右侧面板输入问题：Enter 发送，Shift+Enter 换行，Esc 停止生成。
-
-选中 PDF 文本后会自动带入当前问题。面板顶部的对话列表可新建、切换、删除或清空对话。
 
 ## 🙏 致谢
 

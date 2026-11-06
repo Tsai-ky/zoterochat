@@ -1,4 +1,5 @@
 import { el } from "../utils/dom";
+import { createBrandIcon } from "../utils/icons";
 import { getString } from "../utils/locale";
 import { log, logError } from "../utils/log";
 import { ChatPanel } from "./chatPanel";
@@ -22,7 +23,6 @@ const SIDENAV_ID = "zotero-context-pane-sidenav";
 const TOOLBAR_EVENT = "renderToolbar";
 const CONTEXT_MENU_EVENT = "createViewContextMenu";
 const PANEL_LIMIT = 8;
-const SVG_NS = "http://www.w3.org/2000/svg";
 
 interface ReaderChatWindowState {
   win: _ZoteroTypes.MainWindow;
@@ -646,27 +646,7 @@ function buildToolbarButton(
 
   // 标志：高亮笔划线 + 星芒。96 网格设计，靠 width/height 缩到 16px，
   // 字形撑满 ~88% 网格，避免在工具栏里显得比原生图标小。
-  const svg = doc.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("width", "16");
-  svg.setAttribute("height", "16");
-  svg.setAttribute("viewBox", "0 0 96 96");
-  svg.setAttribute("fill", "currentColor");
-
-  const spark = doc.createElementNS(SVG_NS, "path");
-  spark.setAttribute(
-    "d",
-    "M60 4Q62 29 86 31Q62 33 60 56Q58 33 34 31Q58 29 60 4Z",
-  );
-
-  const lines = doc.createElementNS(SVG_NS, "path");
-  lines.setAttribute("d", "M12 68H84M12 84H54");
-  lines.setAttribute("fill", "none");
-  lines.setAttribute("stroke", "currentColor");
-  lines.setAttribute("stroke-width", "9");
-  lines.setAttribute("stroke-linecap", "round");
-
-  svg.append(spark, lines);
-  button.append(svg);
+  button.append(createBrandIcon(doc, 16));
 
   button.addEventListener("click", (event) => {
     event.preventDefault();

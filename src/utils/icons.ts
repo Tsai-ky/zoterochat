@@ -92,6 +92,33 @@ const ICONS: Record<
   "chevron-down": [{ tag: "path", attrs: { d: "m6 9 6 6 6-6" } }],
 };
 
+/** ZoteroChat 标志：荧光笔划线 + 星芒，96 网格，颜色跟随 currentColor。 */
+export function createBrandIcon(doc: Document, size = 16): SVGElement {
+  const svg = doc.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.setAttribute("viewBox", "0 0 96 96");
+  svg.setAttribute("fill", "currentColor");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+
+  const spark = doc.createElementNS(SVG_NS, "path");
+  spark.setAttribute(
+    "d",
+    "M60 4Q62 29 86 31Q62 33 60 56Q58 33 34 31Q58 29 60 4Z",
+  );
+
+  const lines = doc.createElementNS(SVG_NS, "path");
+  lines.setAttribute("d", "M12 68H84M12 84H54");
+  lines.setAttribute("fill", "none");
+  lines.setAttribute("stroke", "currentColor");
+  lines.setAttribute("stroke-width", "9");
+  lines.setAttribute("stroke-linecap", "round");
+
+  svg.append(spark, lines);
+  return svg;
+}
+
 /** 创建 24 网格的线性图标；尺寸由 CSS 或 size 参数决定。 */
 export function createIcon(
   doc: Document,
