@@ -35,6 +35,12 @@
   -moz-user-select: text;
 }
 
+/* 选中正文时焦点会移到面板容器（tabindex=-1）以便原生复制；
+   这个焦点只用于路由命令，不显示焦点框。 */
+.zoterochat-panel:focus {
+  outline: none;
+}
+
 /* 面板中央的插件图标水印：纯装饰，不参与点击与读屏。 */
 .zoterochat-panel::before {
   content: "";

@@ -290,7 +290,9 @@ export class ChatPanel {
       composerCard,
     ]);
 
-    this.root = el(doc, "div", { class: "zoterochat-panel" }, [
+    // tabindex=-1：面板本身可被 programmatic focus，用于让原生复制命令
+    // 退回文档选区（见 onRootMouseDown）。
+    this.root = el(doc, "div", { class: "zoterochat-panel", tabindex: "-1" }, [
       this.conversationBar.element,
       this.buildConfigNotice(),
       this.messages.element,
@@ -426,6 +428,7 @@ export class ChatPanel {
       }),
       on(this.input, "keydown", (event) => this.onInputKeyDown(event)),
       on(this.root, "keydown", (event) => this.onRootKeyDown(event)),
+      on(this.root, "mousedown", (event) => this.onRootMouseDown(event)),
       on(this.actionButton, "click", () => this.onActionClick()),
     );
   }
@@ -451,6 +454,90 @@ export class ChatPanel {
     if (keyEvent.key === "Escape" && this.store.isBusy) {
       keyEvent.preventDefault();
       this.stop();
+      return;
+    }
+    if (
+      (keyEvent.metaKey || keyEvent.ctrlKey) &&
+      !keyEvent.shiftKey &&
+      !keyEvent.altKey &&
+      keyEvent.key.toLowerCase() === "c"
+    ) {
+      this.copySelectionFallback(keyEvent);
+    }
+  }
+
+  /**
+   * 原生复制命令不可用时，直接复制面板内的选区。
+   *
+   * 正常路径由平台处理（保留 Markdown 的富文本格式）；这里只在
+   * `cmd_copy` 被判为不可用（例如焦点被输入框的可编辑选区占用）时兜底，
+   * 避免选区可选中却复制不到剪贴板。
+   */
+  private copySelectionFallback(event: KeyboardEvent): void {
+    const doc = this.doc;
+    const selection = doc.getSelection?.();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    if (!this.root?.contains(range.commonAncestorContainer)) {
+      return;
+    }
+
+    // XUL 文档上的命令分发器不是标准 DOM 接口，按需结构声明。
+    const dispatcher = (
+      doc as unknown as {
+        commandDispatcher?: {
+          getControllerForCommand?(command: string): {
+            isCommandEnabled?(command: string): boolean;
+          } | null;
+        };
+      }
+    ).commandDispatcher;
+    const controller = dispatcher?.getControllerForCommand?.("cmd_copy");
+    if (controller?.isCommandEnabled?.("cmd_copy")) {
+      // 平台能处理，保留它写入剪贴板的 HTML 版本。
+      return;
+    }
+
+    event.preventDefault();
+    try {
+      Zotero.Utilities.Internal.copyTextToClipboard(selection.toString());
+    } catch (e) {
+      logError(e);
+    }
+  }
+
+  /**
+   * 让正文选区能被 Cmd/Ctrl+C 复制。
+   *
+   * Zotero 主窗口是 XUL 文档：复制命令（`cmd_copy`）优先复制“当前聚焦的
+   * 可编辑控件”里的选区。面板打开时焦点在输入框，用户在正文里选中文字后
+   * 焦点仍留在输入框，按复制只会复制输入框里的空选区，正文选区被忽略。
+   * 按下鼠标时把焦点移到面板容器（不可编辑），复制命令就会退回主窗口的
+   * 文档选区，从而走浏览器原生复制（保留 Markdown 的富文本格式）。
+   */
+  private onRootMouseDown(event: Event): void {
+    if (this.destroyed || !this.root) {
+      return;
+    }
+    const mouseEvent = event as MouseEvent;
+    // 右键留给后续菜单；只处理左键选择。
+    if (mouseEvent.button !== 0) {
+      return;
+    }
+    const target = mouseEvent.target as Element | null;
+    // 输入框、按钮、链接自己管理焦点，不能被面板抢走。
+    const interactive = target?.closest?.(
+      "textarea, input, button, a[href], select, [contenteditable]",
+    );
+    if (interactive) {
+      return;
+    }
+    try {
+      this.root.focus({ preventScroll: true });
+    } catch (e) {
+      logError(e);
     }
   }
 
