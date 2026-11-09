@@ -9,7 +9,7 @@ import { logError } from "../utils/log";
 import type { ChatMessage } from "./llm/types";
 
 export interface ResolvedPaper {
-  /** 常规父条目。 */
+  /** 文献根条目：常规父条目，或没有父条目的独立 PDF 附件自身。 */
   item: Zotero.Item;
   /** 用于提取全文的 PDF 附件（可能没有）。 */
   attachment?: Zotero.Item;
@@ -234,12 +234,24 @@ export interface ResolvePaperOptions {
 /**
  * 把当前条目解析为常规文献：
  * 常规文献 → 自身；PDF/其他附件、笔记、批注 → 逐层向上找父条目。
- * 无父条目的独立附件返回 null（分节应禁用）。
+ * 无父条目的独立 PDF 附件以自身作为文献，全文直接取自该附件；
+ * 其余无父条目的附件返回 null。
  */
 export async function resolvePaper(
   item: Zotero.Item,
   options: ResolvePaperOptions = {},
 ): Promise<ResolvedPaper | null> {
+  // 阅读器面板按附件建会话：独立 PDF 没有父条目，但它本身就是全文来源。
+  if (!item.parentItemID && safeIsPdfAttachment(item)) {
+    return {
+      item,
+      attachment: item,
+      libraryID: item.libraryID,
+      itemKey: item.key,
+      itemID: item.id,
+    };
+  }
+
   let current = item;
 
   for (
@@ -274,6 +286,15 @@ export async function resolvePaper(
 function safeIsRegularItem(item: Zotero.Item): boolean {
   try {
     return item.isRegularItem();
+  } catch (e) {
+    logError(e);
+    return false;
+  }
+}
+
+function safeIsPdfAttachment(item: Zotero.Item): boolean {
+  try {
+    return item.isPDFAttachment();
   } catch (e) {
     logError(e);
     return false;
