@@ -1,7 +1,7 @@
 {
   "name": "zoterochat",
   "type": "module",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "AI reading assistant for Zotero PDFs · Zotero PDF 阅读助手",
   "license": "AGPL-3.0-or-later",
