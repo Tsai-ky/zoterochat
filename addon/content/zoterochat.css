@@ -272,64 +272,6 @@
   font-size: 11px;
 }
 
-.zoterochat-panel .zoterochat-context-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-width: 0;
-  max-width: 100%;
-  color: var(--zoterochat-muted);
-  font-size: 12px;
-}
-
-.zoterochat-panel .zoterochat-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  min-width: 0;
-  max-width: 100%;
-  border: 1px solid var(--zoterochat-border);
-  border-radius: 999px;
-  padding: 1px 8px;
-}
-
-.zoterochat-panel .zoterochat-chip-value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.zoterochat-panel .zoterochat-chip-clear {
-  flex: 0 0 auto;
-  padding: 0 2px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--zoterochat-muted);
-  line-height: 1;
-  cursor: pointer;
-}
-
-.zoterochat-panel .zoterochat-chip-clear:hover {
-  color: inherit;
-}
-
-/* Zotero 的 button 样式会把隐藏元素重新显示出来，这里显式复位。 */
-.zoterochat-panel .zoterochat-chip[hidden],
-.zoterochat-panel .zoterochat-chip-clear[hidden],
-.zoterochat-panel .zoterochat-context-notice[hidden] {
-  display: none !important;
-}
-
-.zoterochat-panel .zoterochat-context-notice {
-  flex: 1 1 100%;
-  min-width: 0;
-  color: var(--zoterochat-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ------------------------------------------------------------ 消息区 */
 
 .zoterochat-panel .zoterochat-messages {
@@ -368,6 +310,15 @@
   background: var(--zoterochat-surface);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* 消息里的引用原文：完整展示，用左侧竖线区分问题。 */
+.zoterochat-panel .zoterochat-message-user .zoterochat-message-quote {
+  margin-bottom: 6px;
+  padding-left: 8px;
+  border-left: 2px solid var(--zoterochat-border);
+  color: var(--zoterochat-muted);
+  white-space: pre-wrap;
 }
 
 .zoterochat-panel .zoterochat-message-assistant {
@@ -590,7 +541,7 @@
 
 /* ------------------------------------------------------------ 输入区 */
 
-/* 上下文气泡在上、输入卡片在下。 */
+/* 输入卡片容器（模型/预设弹层相对卡片定位）。 */
 .zoterochat-panel .zoterochat-composer {
   display: flex;
   flex-direction: column;
@@ -1209,7 +1160,6 @@
 @media (prefers-contrast: more) {
   .zoterochat-panel .zoterochat-notice,
   .zoterochat-panel .zoterochat-message-note,
-  .zoterochat-panel .zoterochat-context-bar,
   .zoterochat-panel .zoterochat-error-detail,
   .zoterochat-panel .zoterochat-history-time,
   .zoterochat-panel .zoterochat-model,
@@ -1220,10 +1170,14 @@
     color: inherit;
   }
 
-  .zoterochat-panel .zoterochat-chip,
   .zoterochat-panel .zoterochat-input,
   .zoterochat-panel .zoterochat-error {
     border-color: currentColor;
+  }
+
+  .zoterochat-panel .zoterochat-message-quote {
+    color: inherit;
+    border-left-color: currentColor;
   }
 }
 
@@ -1231,7 +1185,6 @@
 @media (forced-colors: active) {
   .zoterochat-panel .zoterochat-message-user .zoterochat-message-content,
   .zoterochat-panel .zoterochat-send,
-  .zoterochat-panel .zoterochat-chip,
   .zoterochat-panel .zoterochat-composer-card,
   .zoterochat-panel .zoterochat-model-menu,
   .zoterochat-panel .zoterochat-model-trigger,

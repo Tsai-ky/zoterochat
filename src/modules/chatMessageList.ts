@@ -9,7 +9,7 @@ import { createIcon } from "../utils/icons";
 import { getString } from "../utils/locale";
 import { attachLinkHandler, renderMarkdown } from "../utils/markdown";
 import type { ChatStore, UiMessage } from "./chatStore";
-import { extractQuestion } from "./context";
+import { extractQuestion, extractSelection } from "./context";
 import { errorMessageID } from "./errorMessages";
 
 const AUTO_SCROLL_THRESHOLD = 40;
@@ -191,8 +191,25 @@ export class ChatMessageList {
         }
       }
     } else {
-      // 消息内容里可能带有 <selected_text> 包装；气泡只显示用户的问题。
-      content.textContent = extractQuestion(message.content);
+      // 引用内容用中文引号完整展示在问题上方，和实际发送的上下文保持一致。
+      const selection = extractSelection(message.content);
+      if (selection) {
+        content.append(
+          el(doc, "div", {
+            class: "zoterochat-message-quote",
+            text: `“${selection}”`,
+          }),
+        );
+      }
+      const question = extractQuestion(message.content);
+      if (question) {
+        content.append(
+          el(doc, "div", {
+            class: "zoterochat-message-text",
+            text: question,
+          }),
+        );
+      }
     }
     node.append(content);
 

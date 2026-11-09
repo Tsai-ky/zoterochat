@@ -24,7 +24,8 @@ export interface SelectionInput {
 
 export const SELECTION_TTL_MS = 30 * 60 * 1000;
 
-type Listener = () => void;
+/** 订阅回调带上本次变化对应的选中文本；清空时为 null。 */
+type Listener = (selection: CapturedSelection | null) => void;
 
 export class SelectionTracker {
   private readonly entries = new Map<number, CapturedSelection>();
@@ -47,8 +48,9 @@ export class SelectionTracker {
     }
 
     this.prune();
-    this.entries.set(selection.attachmentItemID, { ...selection, text });
-    this.emit();
+    const stored = { ...selection, text };
+    this.entries.set(selection.attachmentItemID, stored);
+    this.emit(stored);
   }
 
   getForAttachment(attachmentID: number | undefined): CapturedSelection | null {
@@ -59,7 +61,7 @@ export class SelectionTracker {
     return this.entries.get(attachmentID) ?? null;
   }
 
-  /** 最近一次捕获（用于判断“选中文本来自其他附件”）。 */
+  /** 最近一次捕获（跨附件，按捕获时间）。 */
   getLatest(): CapturedSelection | null {
     this.prune();
     let latest: CapturedSelection | null = null;
@@ -78,12 +80,12 @@ export class SelectionTracker {
         return;
       }
       this.entries.clear();
-      this.emit();
+      this.emit(null);
       return;
     }
 
     if (this.entries.delete(attachmentID)) {
-      this.emit();
+      this.emit(null);
     }
   }
 
@@ -104,10 +106,10 @@ export class SelectionTracker {
     }
   }
 
-  private emit(): void {
+  private emit(selection: CapturedSelection | null): void {
     for (const listener of [...this.listeners]) {
       try {
-        listener();
+        listener(selection);
       } catch {
         // 单个订阅者异常不应影响捕获。
       }

@@ -1,4 +1,3 @@
-import type { FluentMessageId } from "../../typings/i10n";
 import { createAbortController } from "../utils/abort";
 import { el, ensureStyleSheet, on } from "../utils/dom";
 import { createIcon } from "../utils/icons";
@@ -30,7 +29,6 @@ import {
   formatCount,
   getFullText,
   resolvePaper,
-  safeSliceEnd,
   trimHistory,
   truncateMiddle,
   type FullTextResult,
@@ -57,7 +55,12 @@ import {
   type AppSettings,
   type ProviderOverride,
 } from "./settings";
-import { selectionTracker } from "./selectionTracker";
+import {
+  insertQuoteToken,
+  removeQuoteToken,
+  replaceQuoteToken,
+} from "./quotePlaceholder";
+import { selectionTracker, type CapturedSelection } from "./selectionTracker";
 
 export interface ChatPanelOptions {
   doc: Document;
@@ -66,20 +69,9 @@ export interface ChatPanelOptions {
   tabType?: string;
 }
 
-const SELECTION_PREVIEW_LENGTH = 60;
-
 /** 从消息里记录的值还原 ProviderKind；未知值视为未记录。 */
 function toProviderKind(value: string | undefined): ProviderKind | undefined {
   return value === "openai" || value === "anthropic" ? value : undefined;
-}
-
-/** 选中文本的紧凑预览：折叠空白并截断。 */
-function previewOf(text: string): string {
-  const compact = text.replace(/\s+/g, " ").trim();
-  if (compact.length <= SELECTION_PREVIEW_LENGTH) {
-    return compact;
-  }
-  return `${compact.slice(0, safeSliceEnd(compact, SELECTION_PREVIEW_LENGTH))}…`;
 }
 
 /**
@@ -113,18 +105,14 @@ export class ChatPanel {
   private fullTextToggle: HTMLButtonElement | null = null;
   private fullTextLengthEl: HTMLElement | null = null;
   private noticeEl: HTMLElement | null = null;
-  private contextBarEl: HTMLElement | null = null;
-  private selectionChip: HTMLElement | null = null;
-  private selectionValue: HTMLElement | null = null;
-  private selectionClear: HTMLButtonElement | null = null;
-  private contextNotice: HTMLElement | null = null;
   private configNoticeEl: HTMLElement | null = null;
   /**
    * 全文开关：只决定尚未提问的新对话是否携带全文；
    * 对话首轮发送后该值随对话锁定，不再读这个开关。
    */
   private fullTextExcluded = false;
-  private selectionExcluded = false;
+  /** 输入框里待发送的引用占位符与原文；null 表示没有待发送引用。 */
+  private pendingQuote: { token: string; text: string } | null = null;
 
   private controller: AbortController | null = null;
   private destroyed = false;
@@ -284,9 +272,7 @@ export class ChatPanel {
       onOpenSettings: () => this.openSettings(),
     });
     composerCard.append(this.presetMenu.element);
-    // 上下文气泡紧贴输入框上沿，× 表示本次不添加该引用。
     const composer = el(doc, "div", { class: "zoterochat-composer" }, [
-      this.buildContextBar(),
       composerCard,
     ]);
 
@@ -311,17 +297,14 @@ export class ChatPanel {
 
     this.bindEvents();
     this.disposers.push(
-      selectionTracker.subscribe(() => {
-        if (!this.destroyed) {
-          // 新的选中取代旧的：之前点掉的“选中”气泡重新出现。
-          this.selectionExcluded = false;
-          this.updateContextBar();
-        }
-      }),
+      selectionTracker.subscribe((captured) =>
+        this.onSelectionCaptured(captured),
+      ),
     );
-    this.updateContextBar();
     this.updateConfigNotice();
     this.body.replaceChildren(this.root);
+    // 面板重新挂载时恢复尚未发送的引用（占位符只存在于输入框里）。
+    this.restorePendingSelection();
     this.resizeInput();
     this.renderAll();
     this.updateComposerState();
@@ -570,18 +553,23 @@ export class ChatPanel {
       this.updateConfigNotice();
       return;
     }
-    void this.startSend(text);
+    // 从输入框里取出引用占位符；用户手动删掉占位符时本次不带引用。
+    const { question, selection } = this.takeQuote(this.input.value);
+    if (!question && !selection) {
+      return;
+    }
+    void this.startSend(question, selection);
   }
 
   /**
    * 准备上下文 → 插入消息 → 发起请求。
    * 全文读取是异步的（命中缓存时几乎立即返回），期间用 `preparing` 阻止重复发送。
    */
-  private async startSend(question: string): Promise<void> {
+  private async startSend(question: string, selection: string): Promise<void> {
     this.preparing = true;
     this.updateComposerState();
 
-    const prepared = await this.prepareRequest(question)
+    const prepared = await this.prepareRequest(question, selection)
       .catch((e: unknown) => {
         logError(e);
         return null;
@@ -611,27 +599,29 @@ export class ChatPanel {
    * 先插入并持久化 user 消息，再异步读取全文补齐 contextJSON，
    * 避免首次读取大 PDF 时问题迟迟不出现在界面/文件里。
    */
-  private async prepareRequest(question: string): Promise<{
+  private async prepareRequest(
+    question: string,
+    selection: string,
+  ): Promise<{
     settings: AppSettings;
     started: StartRequestResult;
   } | null> {
     const token = this.conversationToken;
     const settings = getSettings();
-    const selection = this.pickSelection();
-    const userContent = buildUserContent(question, selection.text);
+    const userContent = buildUserContent(question, selection);
     // 对话已锁定时沿用首轮的值；新对话取面板开关。
     const includeFullText = this.includeFullText();
     // 全文信息在读取完成后再补；先记录选中文本与排除状态。
     const baseContext = {
-      selectionChars: selection.chars,
-      selectionTruncated: selection.truncated,
-      selectionOmittedChars: selection.omittedChars,
+      selectionChars: selection.length,
+      selectionTruncated: false,
+      selectionOmittedChars: 0,
       fullTextChars: 0,
       truncated: false,
       omittedChars: 0,
       attachmentKey: null as string | null,
       includedFullText: includeFullText,
-      includedSelection: selection.chars > 0,
+      includedSelection: selection.length > 0,
     };
 
     // 记录本轮实际使用的 Provider/模型：该对话后续轮次据此锁定。
@@ -653,6 +643,8 @@ export class ChatPanel {
       this.input.value = "";
       this.resizeInput();
     }
+    // 引用已经随消息发出：清掉占位符状态与阅读器里的待发送选中。
+    this.clearPendingQuote();
     this.renderAll();
     this.updateComposerState();
 
@@ -696,7 +688,7 @@ export class ChatPanel {
       this.store.updateContextJSON(started.userMessage.id, contextJSON);
       // 用 upsert 覆盖之前的临时 contextJSON，文件名与消息 ID 不变。
       this.conversations?.persistUser({ ...started.userMessage, contextJSON });
-      this.updateContextBar();
+      this.refreshFullTextToggle();
       return { settings, started };
     } catch (e) {
       // 准备阶段的意外异常不能把面板留在“生成中”。
@@ -740,7 +732,7 @@ export class ChatPanel {
     if (this.destroyed || token !== this.contextToken) {
       return;
     }
-    this.updateContextBar();
+    this.refreshFullTextToggle();
   }
 
   /** 文献解析只执行一次，全文与对话文件共用结果。 */
@@ -771,34 +763,131 @@ export class ChatPanel {
     this.contextLoaded = true;
   }
 
+  // ------------------------------------------------------------ 引用占位符
+
+  /** 当前面板对应的 PDF 附件；全文未就绪时用面板绑定的附件兜底。 */
+  private currentAttachmentID(): number | undefined {
+    return this.paper?.attachment?.id ?? this.getPdfAttachmentID();
+  }
+
   /**
-   * 只使用属于当前文献最佳附件的选中文本；
-   * 用户在气泡上点了 × 表示本条消息不附带。
+   * 阅读器里点击「Add to chat」后把选中文本变成输入框里的占位符。
+   * 只处理当前附件：其他附件的选中直接忽略。
    */
-  private pickSelection(): {
-    text: string;
-    chars: number;
-    truncated: boolean;
-    omittedChars: number;
-  } {
-    if (this.selectionExcluded) {
-      return { text: "", chars: 0, truncated: false, omittedChars: 0 };
+  private onSelectionCaptured(captured: CapturedSelection | null): void {
+    if (this.destroyed) {
+      return;
     }
+    const attachmentID = this.currentAttachmentID();
+    if (
+      captured &&
+      attachmentID != null &&
+      captured.attachmentItemID === attachmentID
+    ) {
+      this.setPendingQuote(captured.text);
+    }
+  }
 
-    // 全文可能尚未读取完成，此时先用面板绑定的 PDF 附件定位选中文本。
+  /** 面板重新挂载/新建时，把尚未发送的选中文本补进输入框。 */
+  private restorePendingSelection(): void {
+    if (this.activePreset || this.destroyed) {
+      return;
+    }
     const captured = selectionTracker.getForAttachment(
-      this.paper?.attachment?.id ?? this.getPdfAttachmentID(),
+      this.currentAttachmentID(),
     );
-    if (!captured) {
-      return { text: "", chars: 0, truncated: false, omittedChars: 0 };
+    if (captured) {
+      this.setPendingQuote(captured.text);
+    }
+  }
+
+  /**
+   * 写入待发送引用：输入框里显示紧凑占位符，全文只留在内存。
+   * 连续选中不同文本时替换旧占位符；预设模式下写进问答草稿。
+   */
+  private setPendingQuote(text: string): void {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    const token = getString("composer-quote-placeholder", {
+      args: { chars: trimmed.length },
+    });
+    const previous = this.pendingQuote?.token;
+
+    if (this.activePreset) {
+      // 输入框当前是只读提示词，占位符先落到切换前的问答草稿里。
+      this.qaDraft = this.upsertQuoteToken(this.qaDraft, previous, token).value;
+    } else if (this.input) {
+      const next = this.upsertQuoteToken(
+        this.input.value,
+        previous,
+        token,
+        this.input.selectionStart ?? undefined,
+        this.input.selectionEnd ?? undefined,
+      );
+      this.input.value = next.value;
+      this.input.setSelectionRange(next.caret, next.caret);
+      this.input.focus();
+      this.resizeInput();
+      this.updateComposerState();
     }
 
-    return {
-      text: captured.text,
-      chars: captured.text.length,
-      truncated: false,
-      omittedChars: 0,
-    };
+    this.pendingQuote = { token, text: trimmed };
+  }
+
+  private upsertQuoteToken(
+    value: string,
+    previousToken: string | undefined,
+    token: string,
+    selectionStart?: number,
+    selectionEnd?: number,
+  ) {
+    if (previousToken) {
+      const replaced = replaceQuoteToken(value, previousToken, token);
+      if (replaced !== null) {
+        return {
+          value: replaced,
+          caret: replaced.indexOf(token) + token.length,
+        };
+      }
+    }
+    return insertQuoteToken(value, token, selectionStart, selectionEnd);
+  }
+
+  /**
+   * 发送时取出待发送引用并移除占位符。
+   * 预设提示词里没有占位符，但预设消息同样带上待发送引用。
+   */
+  private takeQuote(value: string): { question: string; selection: string } {
+    const pending = this.pendingQuote;
+    if (!pending) {
+      return { question: value.trim(), selection: "" };
+    }
+    if (!this.activePreset) {
+      const removed = removeQuoteToken(value, pending.token);
+      if (!removed.removed) {
+        // 用户手动删掉了占位符：本条消息不带引用。
+        this.clearPendingQuote();
+        return { question: value.trim(), selection: "" };
+      }
+      return { question: removed.text, selection: pending.text };
+    }
+    return { question: value.trim(), selection: pending.text };
+  }
+
+  /** 发送成功后清掉占位符状态、草稿里的占位符与阅读器待发送选中。 */
+  private clearPendingQuote(): void {
+    const pending = this.pendingQuote;
+    this.pendingQuote = null;
+    if (pending) {
+      // 预设发送后恢复的草稿不应再留下无效占位符。
+      this.qaDraft = removeQuoteToken(this.qaDraft, pending.token).text;
+    }
+    const attachmentID = this.currentAttachmentID();
+    if (attachmentID != null) {
+      selectionTracker.clear(attachmentID);
+    }
   }
 
   private retry(): void {
@@ -908,8 +997,6 @@ export class ChatPanel {
         this.messages?.flushStreamingRender();
         this.renderAll();
         this.updateComposerState();
-        // 选中文本的“本次不添加”只作用于刚发出的一条消息，结束后气泡恢复。
-        this.resetSelectionExclusion();
       }
     }
   }
@@ -1456,116 +1543,6 @@ export class ChatPanel {
     return computeContextBudget(this.currentProfile().window, maxTokens);
   }
 
-  // ---------------------------------------------------------------- 上下文条
-
-  private buildContextBar(): HTMLElement {
-    const doc = this.doc;
-    this.selectionValue = el(doc, "span", {
-      class: "zoterochat-chip-value",
-      text: "—",
-    });
-    this.selectionClear = this.buildChipClear(() => {
-      this.selectionExcluded = true;
-      this.updateContextBar();
-    });
-
-    this.contextNotice = el(doc, "span", {
-      class: "zoterochat-context-notice",
-    });
-    this.contextNotice.hidden = true;
-
-    this.selectionChip = this.buildChip("context-selection", [
-      this.selectionValue,
-      this.selectionClear,
-    ]);
-
-    // 全文不再用气泡展示，改为输入卡片里的开关。
-    this.contextBarEl = el(doc, "div", { class: "zoterochat-context-bar" }, [
-      this.selectionChip,
-      this.contextNotice,
-    ]);
-    return this.contextBarEl;
-  }
-
-  /** 气泡右侧的 ×：本次消息不添加该上下文。 */
-  private buildChipClear(onClear: () => void): HTMLButtonElement {
-    const button = el(this.doc, "button", {
-      type: "button",
-      class: "zoterochat-chip-clear",
-      text: "×",
-      "aria-label": getString("context-chip-remove"),
-    });
-    this.disposers.push(on(button, "click", onClear));
-    return button;
-  }
-
-  /** 请求结束后恢复被 × 排除的选中文本；全文开关是持久状态，不重置。 */
-  private resetSelectionExclusion(): void {
-    this.selectionExcluded = false;
-    this.updateContextBar();
-  }
-
-  private buildChip(
-    labelID: FluentMessageId,
-    content: HTMLElement[],
-  ): HTMLElement {
-    const doc = this.doc;
-    return el(doc, "span", { class: "zoterochat-chip" }, [
-      el(doc, "span", {
-        class: "zoterochat-chip-label",
-        text: getString(labelID),
-      }),
-      ...content,
-    ]);
-  }
-
-  /**
-   * 输入框上方的选中文本气泡。
-   * 点 × 只让气泡在本次消息中消失，不影响其它消息。
-   */
-  private updateContextBar(): void {
-    this.refreshFullTextToggle();
-    if (!this.selectionValue) {
-      return;
-    }
-
-    const attachmentID = this.paper?.attachment?.id;
-    const captured = selectionTracker.getForAttachment(attachmentID);
-    const showSelection = !!captured && !this.selectionExcluded;
-    setVisible(this.selectionChip, showSelection);
-    if (captured) {
-      this.selectionValue.textContent = getString("context-selection-preview", {
-        args: {
-          chars: captured.text.length,
-          preview: previewOf(captured.text),
-        },
-      });
-    } else {
-      this.selectionValue.textContent = "—";
-    }
-    setVisible(this.selectionClear, !!captured);
-
-    if (this.contextNotice) {
-      const latest = selectionTracker.getLatest();
-      // 有选中文本，但不属于当前文献的附件：本次不会使用。
-      const otherAttachment =
-        !captured &&
-        latest !== null &&
-        attachmentID != null &&
-        latest.attachmentItemID !== attachmentID;
-      this.contextNotice.hidden = !otherAttachment;
-      this.contextNotice.textContent = otherAttachment
-        ? getString("context-selection-other")
-        : "";
-    }
-
-    // 没有气泡也没有提示时整条隐藏，避免多出一段行间距。
-    setVisible(
-      this.contextBarEl,
-      showSelection || this.contextNotice?.hidden === false,
-    );
-  }
-
   /** 全文长度的短文案；“无全文/读取中…”与开关状态一起显示。 */
   private fullTextLengthText(): string {
     if (!this.paper) {
@@ -1611,19 +1588,6 @@ export class ChatPanel {
       return false;
     }
   }
-}
-
-/**
- * 显示/隐藏元素。
- * 插件的作者样式（如 `.zoterochat-chip { display:inline-flex }`）会压过
- * 浏览器对 `[hidden]` 的默认样式，因此同时写内联 display 兜底。
- */
-function setVisible(element: HTMLElement | null, visible: boolean): void {
-  if (!element) {
-    return;
-  }
-  element.hidden = !visible;
-  element.style.display = visible ? "" : "none";
 }
 
 /** 历史消息只存了错误码；加载时拼出当前语言的提示。 */

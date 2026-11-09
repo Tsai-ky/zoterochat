@@ -147,9 +147,17 @@ export function buildUserContent(question: string, selection: string): string {
   return `<selected_text>\n${trimmedSelection}\n</selected_text>\n\n${trimmedQuestion}`;
 }
 
+const SELECTION_BLOCK = /^<selected_text>\n?([\s\S]*?)\n?<\/selected_text>\s*/;
+
+/** UI 展示用：取出 `<selected_text>` 里的完整引用内容；没有时返回空串。 */
+export function extractSelection(content: string): string {
+  const match = SELECTION_BLOCK.exec(content);
+  return match ? match[1].trim() : "";
+}
+
 /** UI 展示用：去掉 `<selected_text>` 包装，只显示用户输入的问题。 */
 export function extractQuestion(content: string): string {
-  const match = /^<selected_text>[\s\S]*?<\/selected_text>\s*/.exec(content);
+  const match = SELECTION_BLOCK.exec(content);
   return match ? content.slice(match[0].length) : content;
 }
 
